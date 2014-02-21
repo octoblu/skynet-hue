@@ -1,0 +1,19 @@
+{
+  "name": "skynet-hue",
+  "version": "0.1.0",
+  "description": "Skynet Gateway plugin to control a phillips hue lighting system",
+  "keywords": [
+    "skynet-plugin",
+    "hue"
+  ],
+  "repository": "https://github.com/monteslu/skynet-hue.git",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Luis Montes",
+  "license": "MIT",
+  "dependencies": {
+    "rest": "~1.0.2"
+  }
+}
