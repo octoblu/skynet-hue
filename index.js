@@ -21,15 +21,15 @@ function Plugin(messenger, options){
 
 Plugin.getOptionsSchema = function(){
   return {
-    'type': 'object',
-    'properties': {
-      'ipAddress': {
-        'type': 'string',
-        'required': true
+    type: 'object',
+    properties: {
+      ipAddress: {
+        type: 'string',
+        required: true
       },
-      'apiUsername':{
-        'type': 'string',
-        'required': true
+      apiUsername:{
+        type: 'string',
+        required: true
       }
     }
   };
@@ -77,32 +77,40 @@ Plugin.getMessageSchema = function(){
   };
 };
 
+Plugin.prototype.getState = function(lightNumber){
+
+  return this.restCall({
+      path: lightNumber,
+      method: 'GET'
+  });
+
+};
+
+Plugin.prototype.setState = function(data){
+  var options = {
+      path: data.lightNumber + '/state/',
+      method: 'PUT',
+      entity: JSON.stringify(data.options)
+  };
+
+  return this.restCall(options);
+};
+
 Plugin.prototype.onMessage = function(data){
   var self = this;
 
   if(data.getState && data.fromUuid){
-    if(data.fromUuid){
-      self.restCall({
-        path: data.getState,
-        method: 'GET'
-      })
-      .then(function(value){
-        self.messenger.send({devices: data.fromUuid, message: value});
-      }, function(err){
-        console.log('error getting to hue data', err);
-        self.messenger.send({devices: data.fromUuid, message: err});
-      });
-    }
+    this.getState(data.getState)
+    .then(function(state){
+      self.messenger.send({devices: data.fromUuid, message: state});
+    }, function(err){
+      console.log('error getting to hue data', err);
+      self.messenger.send({devices: data.fromUuid, message: err});
+    });
   }
 
   if(data.setState){
-    var options = {
-      path: data.setState.lightNumber + '/state/',
-      method: 'PUT',
-      entity: JSON.stringify(data.setState.options)
-    };
-
-    self.restCall(options)
+    this.setState(data.setState)
     .then(function(value){
       if(data.fromUuid){
         self.messenger.send({devices: data.fromUuid, message: value});
@@ -113,9 +121,7 @@ Plugin.prototype.onMessage = function(data){
         self.messenger.send({devices: data.fromUuid, message: err});
       }
     });
-
   }
-
 
 };
 
