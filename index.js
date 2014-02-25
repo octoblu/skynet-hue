@@ -3,6 +3,65 @@ var errorCodeInterceptor = require('rest/interceptor/errorCode');
 var pathPrefixInterceptor = require('rest/interceptor/pathPrefix');
 var entityInterceptor = require('rest/interceptor/entity');
 
+
+var optionsSchema = {
+  type: 'object',
+  properties: {
+    ipAddress: {
+      type: 'string',
+      required: true
+    },
+    apiUsername:{
+      type: 'string',
+      required: true
+    }
+  }
+};
+
+
+
+var messageSchema = {
+  type: 'object',
+  properties: {
+    setState: {
+      type: 'object',
+      properties: {
+        lightNumber: {
+          type: 'number',
+          required: true
+        },
+        options: {
+          type: 'object',
+          required: true,
+          properties: {
+            on: {
+              type: 'boolean'
+            },
+            bri: {
+              type: 'number'
+            },
+            hue: {
+              type: 'number'
+            },
+            sat: {
+              type: 'number'
+            },
+            transitiontime: {
+              type: 'number'
+            }
+          }
+        }
+      }
+    },
+    getState: {
+      type: 'number'
+    }
+  }
+};
+
+
+
+
 function Plugin(messenger, options){
   this.messenger = messenger;
   this.options = options;
@@ -18,64 +77,6 @@ function Plugin(messenger, options){
   .chain(errorCodeInterceptor);
   return this;
 }
-
-Plugin.getOptionsSchema = function(){
-  return {
-    type: 'object',
-    properties: {
-      ipAddress: {
-        type: 'string',
-        required: true
-      },
-      apiUsername:{
-        type: 'string',
-        required: true
-      }
-    }
-  };
-};
-
-
-Plugin.getMessageSchema = function(){
-  return {
-    type: 'object',
-    properties: {
-      setState: {
-        type: 'object',
-        properties: {
-          lightNumber: {
-            type: 'number',
-            required: true
-          },
-          options: {
-            type: 'object',
-            required: true,
-            properties: {
-              on: {
-                type: 'boolean'
-              },
-              bri: {
-                type: 'number'
-              },
-              hue: {
-                type: 'number'
-              },
-              sat: {
-                type: 'number'
-              },
-              transitiontime: {
-                type: 'number'
-              }
-            }
-          }
-        }
-      },
-      getState: {
-        type: 'number'
-      }
-    }
-  };
-};
 
 Plugin.prototype.getState = function(lightNumber){
 
@@ -96,16 +97,25 @@ Plugin.prototype.setState = function(data){
   return this.restCall(options);
 };
 
-Plugin.prototype.onMessage = function(data){
+Plugin.prototype.onMessage = function(data, cb){
   var self = this;
 
   if(data.getState && data.fromUuid){
     this.getState(data.getState)
     .then(function(state){
-      self.messenger.send({devices: data.fromUuid, message: state});
+      if(cb){
+        cb(null, state);
+      }else{
+        self.messenger.send({devices: data.fromUuid, message: state});
+      }
     }, function(err){
       console.log('error getting to hue data', err);
-      self.messenger.send({devices: data.fromUuid, message: err});
+      if(cb){
+        cb(err, null);
+      }else{
+        self.messenger.send({devices: data.fromUuid, message: err});
+      }
+
     });
   }
 
@@ -113,12 +123,20 @@ Plugin.prototype.onMessage = function(data){
     this.setState(data.setState)
     .then(function(value){
       if(data.fromUuid){
-        self.messenger.send({devices: data.fromUuid, message: value});
+        if(cb){
+          cb(null, value);
+        }else{
+          self.messenger.send({devices: data.fromUuid, message: value});
+        }
       }
     }, function(err){
       console.log('error sending to hue', err);
       if(data.fromUuid){
-        self.messenger.send({devices: data.fromUuid, message: err});
+        if(cb){
+          cb(err, null);
+        }else{
+          self.messenger.send({devices: data.fromUuid, message: err});
+        }
       }
     });
   }
@@ -131,4 +149,7 @@ Plugin.prototype.destroy = function(){
 };
 
 
-module.exports = Plugin;
+module.exports.Plugin = Plugin;
+module.exports.messageSchema = messageSchema;
+module.exports.optionsSchema = optionsSchema;
+
