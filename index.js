@@ -119,7 +119,7 @@ Plugin.prototype.onMessage = function(data, cb){
     });
   }
 
-  if(data.message && data.message.setState && data.setState){
+  if(data.message && data.message.setState){
     this.setState(data.message.setState)
     .then(function(value){
       if(data.fromUuid){
