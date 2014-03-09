@@ -99,9 +99,10 @@ Plugin.prototype.setState = function(data){
 
 Plugin.prototype.onMessage = function(data, cb){
   var self = this;
+  var payload = data.payload || data.message || {};
 
-  if(data.message && data.message.getState && data.fromUuid){
-    this.getState(data.message.getState)
+  if(payload.getState && data.fromUuid){
+    this.getState(payload.getState)
     .then(function(state){
       if(cb){
         cb(null, state);
@@ -119,8 +120,8 @@ Plugin.prototype.onMessage = function(data, cb){
     });
   }
 
-  if(data.message && data.message.setState){
-    this.setState(data.message.setState)
+  if(payload.setState){
+    this.setState(payload.setState)
     .then(function(value){
       if(data.fromUuid){
         if(cb){
