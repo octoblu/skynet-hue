@@ -1,8 +1,36 @@
+"use strict";
 var rest = require('rest');
 var errorCodeInterceptor = require('rest/interceptor/errorCode');
 var pathPrefixInterceptor = require('rest/interceptor/pathPrefix');
 var entityInterceptor = require('rest/interceptor/entity');
+var mimeInterceptor = require('rest/interceptor/mime');
 
+function getRestCall(prefix){
+  return rest
+  .chain(mimeInterceptor, { mime: 'application/json'})
+  .chain(pathPrefixInterceptor, {
+    prefix: prefix
+  })
+  .chain(entityInterceptor)
+  .chain(errorCodeInterceptor);
+}
+
+function getDefaultOptions(callback){
+  getRestCall('http://www.meethue.com/api/nupnp')({method: 'GET'})
+  .then(function(val){
+    if(val && val.length){
+      //grab last ip in case new ones are being added
+      var retVal = {ipAddress: val[val.length - 1].internalipaddress};
+      console.log('hue api site response', val);
+      callback(null, retVal);
+    }else{
+      callback(null,  /* val */ {});
+    }
+  },function(err){
+    callback(err, null);
+  });
+
+}
 
 var optionsSchema = {
   type: 'object',
@@ -66,15 +94,9 @@ function Plugin(messenger, options){
   this.messenger = messenger;
   this.options = options;
 
-
   var prefix = 'http://' + options.ipAddress + '/api/' + options.apiUsername + '/lights/';
   console.log(options, prefix);
-  this.restCall = rest
-  .chain(pathPrefixInterceptor, {
-    prefix: prefix
-  })
-  .chain(entityInterceptor)
-  .chain(errorCodeInterceptor);
+  this.restCall = getRestCall(prefix);
   return this;
 }
 
@@ -105,14 +127,14 @@ Plugin.prototype.onMessage = function(data, cb){
     this.getState(payload.getState)
     .then(function(state){
       if(cb){
-        cb(null, state);
+        cb({result: state});
       }else{
         self.messenger.send({devices: data.fromUuid, message: state});
       }
     }, function(err){
       console.log('error getting to hue data', err);
       if(cb){
-        cb(err, null);
+        cb({error:err});
       }else{
         self.messenger.send({devices: data.fromUuid, message: err});
       }
@@ -150,7 +172,9 @@ Plugin.prototype.destroy = function(){
 };
 
 
-module.exports.Plugin = Plugin;
-module.exports.messageSchema = messageSchema;
-module.exports.optionsSchema = optionsSchema;
-
+module.exports = {
+  Plugin : Plugin,
+  messageSchema : messageSchema,
+  optionsSchema : optionsSchema,
+  getDefaultOptions : getDefaultOptions
+};
