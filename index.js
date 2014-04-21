@@ -111,9 +111,9 @@ Plugin.prototype.getState = function(lightNumber){
 
 Plugin.prototype.setState = function(data){
   var options = {
-      path: data.lightNumber + '/state/',
+      path: data.lightNumber + '/state',
       method: 'PUT',
-      entity: JSON.stringify(data.options)
+      entity: data.options
   };
 
   return this.restCall(options);
