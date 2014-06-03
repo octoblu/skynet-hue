@@ -76,6 +76,12 @@ var messageSchema = {
             },
             transitiontime: {
               type: 'number'
+            },
+            alert: {
+              type: 'string'
+            },
+            effect: {
+              type: 'string'
             }
           }
         }

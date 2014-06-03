@@ -1,6 +1,6 @@
 {
   "name": "skynet-hue",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "Skynet Gateway plugin to control a phillips hue lighting system",
   "keywords": [
     "skynet-plugin",
